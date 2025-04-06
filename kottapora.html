@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kotta Pora 🔥</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f8f4e3;
+      text-align: center;
+      padding: 20px;
+    }
+    #game {
+      display: none;
+      margin-top: 30px;
+    }
+    #progress {
+      width: 80%;
+      height: 30px;
+      background: #ddd;
+      margin: 20px auto;
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+    }
+    #bar {
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(to right, red, orange);
+      transition: 0.1s;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px;
+    }
+    h1 {
+      font-size: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎯 Kotta Pora Game (Aurudu Style)</h1>
+  <p>Enter room ID and play with your friend/crush! 😏</p>
+  <input type="text" id="roomInput" placeholder="Enter Room ID" />
+  <button onclick="joinRoom()">Join Game</button>
+
+  <div id="game">
+    <h2>Player A: Press <b>A</b> key | Player B: Press <b>L</b> key</h2>
+    <div id="progress"><div id="bar"></div></div>
+    <h3 id="status">Tap to Push!</h3>
+  </div>
+
+  <!-- Firebase Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAUwsOfgZ9gbvf7QgvMcHwho9D6H7mH11A",
+      authDomain: "laksi18104.firebaseapp.com",
+      databaseURL: "https://laksi18104-default-rtdb.firebaseio.com",
+      projectId: "laksi18104",
+      storageBucket: "laksi18104.appspot.com",
+      messagingSenderId: "117022628460",
+      appId: "1:117022628460:web:639d8e6a8fdacff0ad1649",
+      measurementId: "G-97PS6EZDZ9"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let roomId = "";
+    let barValue = 50;
+
+    function joinRoom() {
+      roomId = document.getElementById("roomInput").value.trim();
+      if (!roomId) return alert("Enter a room ID");
+
+      document.getElementById("game").style.display = "block";
+      const barRef = db.ref("rooms/" + roomId + "/bar");
+
+      // Set default to 50 if new
+      barRef.once("value", (snap) => {
+        if (!snap.exists()) barRef.set(50);
+      });
+
+      // Realtime updates
+      barRef.on("value", (snap) => {
+        barValue = snap.val();
+        updateBar();
+      });
+
+      document.getElementById("status").textContent = "Tap to Push!";
+    }
+
+    function updateBar() {
+      document.getElementById("bar").style.width = barValue + "%";
+
+      if (barValue <= 0) {
+        document.getElementById("status").textContent = "🎉 Player A Wins!";
+      } else if (barValue >= 100) {
+        document.getElementById("status").textContent = "🎉 Player B Wins!";
+      }
+    }
+
+    // Handle key presses
+    document.addEventListener("keydown", (e) => {
+      if (!roomId || barValue <= 0 || barValue >= 100) return;
+      let delta = 0;
+      if (e.key.toLowerCase() === "a") delta = -2;
+      if (e.key.toLowerCase() === "l") delta = 2;
+      if (delta !== 0) {
+        const newVal = Math.max(0, Math.min(100, barValue + delta));
+        db.ref("rooms/" + roomId + "/bar").set(newVal);
+      }
+    });
+  </script>
+</body>
+</html>
